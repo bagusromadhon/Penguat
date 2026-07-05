@@ -200,8 +200,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (btnResetStats) {
-        btnResetStats.addEventListener('click', () => {
-            alert('Fitur Reset dinonaktifkan pada mode Remote Database demi keamanan.');
+        btnResetStats.addEventListener('click', async () => {
+            const confirmReset = confirm('Apakah Anda yakin ingin menghapus SEMUA data dan curhatan? Tindakan ini tidak bisa dibatalkan.');
+            if (confirmReset) {
+                btnResetStats.innerText = "Mereset...";
+                try {
+                    const res = await fetch('/api/reset', { method: 'POST' });
+                    if (res.ok) {
+                        alert('Data berhasil di-reset menjadi baru dan fresh! ✨');
+                        renderAdminStats();
+                    } else {
+                        alert('Gagal mereset data. Server sibuk.');
+                    }
+                } catch (e) {
+                    alert('Gagal menghubungi server.');
+                }
+                btnResetStats.innerText = "Reset Data";
+            }
         });
     }
 
