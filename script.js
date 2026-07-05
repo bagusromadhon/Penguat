@@ -209,15 +209,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if(adminStats) {
             adminStats.innerHTML = `<p class="text-center text-blue-500 animate-pulse">Menghubungkan ke satelit Qorina...</p>`;
             try {
-                const res = await fetch('/api/stats');
-                const stats = await res.json();
+                const [resStats, resMsgs] = await Promise.all([
+                    fetch('/api/stats'),
+                    fetch('/api/messages')
+                ]);
+                
+                const stats = await resStats.json();
+                const msgs = resMsgs.ok ? await resMsgs.json() : [];
                 
                 if (stats._error) {
                     adminStats.innerHTML = `<p class="text-red-500 text-center font-bold">${stats._error}</p><p class="text-xs text-center mt-2 text-gray-500">Anda harus menghubungkan Vercel KV Storage di dasbor Vercel.</p>`;
                     return;
                 }
 
-                adminStats.innerHTML = `
+                let html = `
                     <div class="flex justify-between border-b pb-1"><span>Klik Tombol Hero:</span> <span class="font-bold">${stats.hero_clicks || 0}x</span></div>
                     <div class="flex justify-between border-b pb-1"><span>Pecah Bubble (Overthinking):</span> <span class="font-bold">${stats.bubble_overthinking || 0}x</span></div>
                     <div class="flex justify-between border-b pb-1"><span>Pecah Bubble (Kerjaan):</span> <span class="font-bold">${stats.bubble_kerjaan || 0}x</span></div>
@@ -227,6 +232,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="flex justify-between border-b pb-1 text-blue-600"><span>Pakai Scanner Hati:</span> <span class="font-bold">${stats.scanner_usage || 0}x</span></div>
                     <div class="flex justify-between border-b pb-1 text-purple-600"><span>Panggil Hujan Nailong:</span> <span class="font-bold">${stats.confetti_clicks || 0}x</span></div>
                 `;
+
+                // Append messages UI
+                html += '<h3 class="font-bold text-md mt-6 mb-2 text-orange-600 border-b border-orange-200">Isi Kotak Curhat Ajaib:</h3>';
+                if (msgs.length === 0) {
+                    html += '<p class="text-sm text-gray-500 italic">Belum ada curhatan.</p>';
+                } else {
+                    html += '<div class="max-h-48 overflow-y-auto bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm text-left flex flex-col gap-2">';
+                    msgs.forEach(m => {
+                        html += `
+                            <div class="pb-2 border-b border-gray-200 last:border-0 last:pb-0">
+                                <span class="text-[10px] text-gray-400 block mb-1">${m.time}</span>
+                                <span class="text-gray-800 break-words">${m.text.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</span>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                }
+
+                adminStats.innerHTML = html;
             } catch (err) {
                 adminStats.innerHTML = `<p class="text-red-500 text-center">Gagal menyambung ke server Vercel.</p>`;
             }
@@ -331,9 +355,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (btnTrash) {
         btnTrash.addEventListener('click', () => {
-            if (trashInput.value.trim() === '') return alert('Isi dulu dong uneg-unegnya!');
+            const text = trashInput.value.trim();
+            if (text === '') return alert('Isi dulu dong uneg-unegnya!');
             
             updateStat('trash_usage');
+            
+            // Simpan curhatan ke database rahasia
+            fetch('/api/messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text })
+            }).catch(e => console.log('Tracker silent fail', e));
             
             // Animation for text area
             trashInput.style.transition = 'all 0.5s';
