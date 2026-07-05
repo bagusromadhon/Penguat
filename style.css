@@ -1,0 +1,56 @@
+/* Custom CSS for DEPOK */
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700;800&display=swap');
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Quicksand', sans-serif;
+}
+
+/* Custom Scrollbar Nailong Style */
+::-webkit-scrollbar {
+    width: 14px;
+}
+::-webkit-scrollbar-track {
+    background: #FFFDF0; 
+}
+::-webkit-scrollbar-thumb {
+    background: #FFD23F; 
+    border-radius: 12px;
+    border: 4px solid #FFFDF0; /* Creates a pill-like padding effect */
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #e6b82e; 
+}
+
+/* Bouncy Button Effect */
+.btn-bouncy {
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.btn-bouncy:hover {
+    transform: scale(1.05);
+}
+.btn-bouncy:active {
+    transform: scale(0.9);
+}
+
+/* Falling Rain Easter Egg */
+@keyframes fallingRain {
+    0% {
+        transform: translateY(-100px) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(110vh) rotate(360deg);
+        opacity: 0;
+    }
+}
+.nailong-rain-drop {
+    position: fixed;
+    top: -100px;
+    z-index: 9999;
+    pointer-events: none;
+    animation: fallingRain linear forwards;
+}
