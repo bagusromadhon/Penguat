@@ -1,4 +1,16 @@
-import { kv } from '@vercel/kv';
+import { createClient } from 'redis';
+
+let redis = null;
+
+async function getClient() {
+    if (!redis) {
+        if (!process.env.REDIS_URL) throw new Error("REDIS_URL not configured");
+        redis = createClient({ url: process.env.REDIS_URL });
+        redis.on('error', err => console.error('Redis Error:', err));
+        await redis.connect();
+    }
+    return redis;
+}
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -9,14 +21,12 @@ export default async function handler(req, res) {
         const { key, value } = req.body;
         if (!key) return res.status(400).json({ error: 'Key is required' });
 
-        // Increment the key by the given value (default 1)
-        // Ensure the KV database is connected in Vercel otherwise this will fail gracefully due to the try-catch
-        const newValue = await kv.incrby(`depok_${key}`, value || 1);
+        const client = await getClient();
+        const newValue = await client.incrBy(`depok_${key}`, value || 1);
         
         return res.status(200).json({ success: true, [key]: newValue });
     } catch (error) {
-        console.error('KV error:', error);
-        // Fail silently so the frontend doesn't break if KV isn't setup yet
+        console.error('Redis error:', error);
         return res.status(500).json({ error: 'Failed to update tracking data', details: error.message });
     }
 }

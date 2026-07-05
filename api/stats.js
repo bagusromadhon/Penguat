@@ -1,4 +1,16 @@
-import { kv } from '@vercel/kv';
+import { createClient } from 'redis';
+
+let redis = null;
+
+async function getClient() {
+    if (!redis) {
+        if (!process.env.REDIS_URL) throw new Error("REDIS_URL not configured");
+        redis = createClient({ url: process.env.REDIS_URL });
+        redis.on('error', err => console.error('Redis Error:', err));
+        await redis.connect();
+    }
+    return redis;
+}
 
 export default async function handler(req, res) {
     if (req.method !== 'GET') {
@@ -18,14 +30,16 @@ export default async function handler(req, res) {
         ];
         const stats = {};
         
+        const client = await getClient();
+        
         for (const key of keys) {
-            const val = await kv.get(`depok_${key}`);
-            stats[key] = val || 0;
+            const val = await client.get(`depok_${key}`);
+            stats[key] = val ? parseInt(val, 10) : 0;
         }
 
         return res.status(200).json(stats);
     } catch (error) {
-        console.error('KV error:', error);
+        console.error('Redis error:', error);
         // Fallback to zeros if KV is not configured yet
         return res.status(200).json({
             hero_clicks: 0,
@@ -36,7 +50,7 @@ export default async function handler(req, res) {
             trash_usage: 0,
             scanner_usage: 0,
             confetti_clicks: 0,
-            _error: 'Vercel KV not configured yet.'
+            _error: 'Vercel Redis belum terhubung sempurna di Vercel.'
         });
     }
 }
